@@ -2,7 +2,7 @@
 
 把一张张单独拍的菜品照片，按摄影构图规则重新排到同一张桌面上。
 
-![示例输出](docs/preview.png)
+![示例输出](docs/preview.jpg)
 
 输入 5 张单菜照片，输出一张 1200×1500 的餐桌排版图，外加一个记录每盘坐标和尺寸的 `layout.json`。
 
@@ -23,6 +23,8 @@ samples/dish_05.png ─┘
 这个取舍是刻意的：菜品真实可比融合感重要，规则可读可比模型可读重要。
 
 ## 快速开始
+
+需要 Python 3.9+，只依赖 numpy 和 Pillow。
 
 ```bash
 pip install -r requirements.txt

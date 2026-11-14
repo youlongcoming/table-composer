@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import math
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -19,8 +19,6 @@ import numpy as np
 @dataclass
 class Item:
     name: str
-    aspect: float = 1.0  # width / height of the cutout bbox
-    rank: int = 0
 
 
 @dataclass
@@ -31,7 +29,6 @@ class Placement:
     cy: float
     size: float
     z: int
-    meta: dict = field(default_factory=dict)
 
 
 def _resolve_overlaps(pl: list[Placement], w: int, h: int, locked: set[int]) -> None:
@@ -237,7 +234,6 @@ def to_dict(pl: list[Placement], w: int, h: int) -> dict:
                 "cy": round(p.cy, 1),
                 "size": round(p.size, 1),
                 "z": p.z,
-                **p.meta,
             }
             for p in sorted(pl, key=lambda q: q.z)
         ],

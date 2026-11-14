@@ -92,7 +92,7 @@ def main() -> int:
         except Exception as exc:  # keep the rest of the batch alive
             print(f"[skip] {path}: {exc}", file=sys.stderr)
             continue
-        items.append(Item(name=os.path.basename(path), aspect=plate.width / plate.height))
+        items.append(Item(name=os.path.basename(path)))
         cutouts.append(plate)
         report.append({"source": path, "segment": backend, **meta})
         print(f"[ok]   {os.path.basename(path):<28} segment={backend:<18} d={meta['diameter_px']}")
