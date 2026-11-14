@@ -49,7 +49,12 @@ def main() -> int:
     ap.add_argument("--input", nargs="+", required=True, help="image paths or globs")
     ap.add_argument("--out", default="out", help="output directory")
     ap.add_argument("--bg", default="wood", choices=["wood", "linen", "dark", "solid"])
-    ap.add_argument("--segment", default="auto", choices=["auto", "rembg", "threshold", "center"])
+    ap.add_argument("--segment", default="auto",
+                    choices=["auto", "rembg", "foodseg", "threshold", "center"])
+    ap.add_argument("--seg-weights", default="", help="foodseg checkpoint path")
+    ap.add_argument("--seg-device", default="cpu", choices=["cpu", "cuda"])
+    ap.add_argument("--seg-expand", type=float, default=1.55,
+                    help="grow the food mask to the plate rim; use 1.0 for a plate model")
     ap.add_argument("--width", type=int, default=1200)
     ap.add_argument("--height", type=int, default=1500)
     ap.add_argument("--main-ratio", type=float, default=0.45, help="main dish diameter / canvas width")
@@ -81,7 +86,13 @@ def main() -> int:
     for path in paths:
         try:
             img = fit_long_side(load_rgb(path), 1024)
-            mask, backend = segment(img, args.segment)
+            mask, backend = segment(
+                img,
+                args.segment,
+                weights=args.seg_weights or None,
+                device=args.seg_device,
+                expand=args.seg_expand,
+            )
             plate, meta = build(
                 img,
                 mask,

@@ -1,0 +1,5 @@
+# 训练分割模型才需要，跑排版不需要（只要 numpy + Pillow）
+# GPU 版本换成官方索引，例如：
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+torch>=2.7
+torchvision>=0.22

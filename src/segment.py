@@ -4,6 +4,7 @@ Backends
 --------
 auto       pick rembg when installed, otherwise threshold
 rembg      U2Net via onnxruntime; best quality on real photos, runs on CPU
+foodseg    the model trained by ``src/train_seg.py`` on FoodSeg103
 threshold  border-colour distance + Otsu + largest connected component
 center     centred ellipse; last-resort fallback, keeps the demo runnable
 
@@ -11,6 +12,7 @@ Every backend returns a boolean mask at the *original* image resolution.
 """
 from __future__ import annotations
 
+import os
 from collections import deque
 
 import numpy as np
@@ -134,10 +136,30 @@ def _segment_rembg(img: Image.Image) -> np.ndarray:
     return np.asarray(out)[..., 3] > 127
 
 
+def _segment_foodseg(
+    img: Image.Image, weights: str | None, device: str, expand: float
+) -> np.ndarray:
+    from .seg_food import DEFAULT_WEIGHTS, segment as food_segment
+
+    path = weights or os.environ.get("TABLE_COMPOSER_SEG_WEIGHTS") or str(DEFAULT_WEIGHTS)
+    if not os.path.isfile(path):
+        raise FileNotFoundError(
+            f"找不到模型权重 {path}。先跑 python -m src.train_seg，或用 --seg-weights 指定。"
+        )
+    return food_segment(img, weights=path, device=device, expand=expand)
+
+
 # --------------------------------------------------------------------------- #
 # public
 # --------------------------------------------------------------------------- #
-def segment(img: Image.Image, backend: str = "auto") -> tuple[np.ndarray, str]:
+def segment(
+    img: Image.Image,
+    backend: str = "auto",
+    *,
+    weights: str | None = None,
+    device: str = "cpu",
+    expand: float = 1.55,
+) -> tuple[np.ndarray, str]:
     img = img.convert("RGB")
     if backend == "auto":
         try:
@@ -147,6 +169,8 @@ def segment(img: Image.Image, backend: str = "auto") -> tuple[np.ndarray, str]:
         except Exception:
             backend = "threshold"
 
+    if backend == "foodseg":
+        return _segment_foodseg(img, weights, device, expand), "foodseg"
     if backend == "rembg":
         return _segment_rembg(img), "rembg"
     if backend == "threshold":

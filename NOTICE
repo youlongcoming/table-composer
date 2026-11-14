@@ -28,6 +28,13 @@ MIT 许可，见 LICENSE。
 - numpy — BSD-3-Clause
 - rembg（可选）— MIT
 - onnxruntime（可选）— MIT
+- torch / torchvision（可选，仅训练用）— BSD-3-Clause
+
+## 模型权重
+
+本仓库**不包含**任何训练好的权重。`weights/` 已被 `.gitignore` 排除。
+用 `src/train_seg.py` 训出来的权重，其法律性质取决于训练数据：FoodSeg103 仅限学术研究，
+由此训出的权重不要商用、不要重新分发。
 
 ## 生成内容声明
 

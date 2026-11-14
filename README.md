@@ -51,7 +51,10 @@ python compose.py --input photos/*.jpg --out out --segment rembg --bg linen
 | `--input` | 必填 | 图片路径或 glob，可给多个 |
 | `--out` | `out` | 输出目录 |
 | `--bg` | `wood` | `wood` / `linen` / `dark` / `solid` |
-| `--segment` | `auto` | `auto` / `rembg` / `threshold` / `center` |
+| `--segment` | `auto` | `auto` / `rembg` / `foodseg` / `threshold` / `center` |
+| `--seg-weights` | `weights/seg_foodseg.pt` | `foodseg` 的模型权重 |
+| `--seg-device` | `cpu` | `cpu` / `cuda` |
+| `--seg-expand` | 1.55 | 把食物 mask 扩到盘沿的倍数，盘子模型用 1.0 |
 | `--width` `--height` | 1200×1500 | 画布尺寸 |
 | `--main-ratio` | 0.48 | 主菜直径 / 画布宽度 |
 | `--ring` | 0.42 | 配菜环绕半径 / 画布宽度 |
@@ -80,10 +83,36 @@ python compose.py --input photos/*.jpg --out out --segment rembg --bg linen
 | 后端 | 适用 | 依赖 |
 |---|---|---|
 | `rembg` | 真实照片，推荐 | `pip install rembg onnxruntime` |
+| `foodseg` | 自己训的模型，见下一节 | `pip install -r requirements-train.txt` |
 | `threshold` | 背景干净的图、合成测试图 | 无 |
 | `center` | 兜底，假设菜在正中 | 无 |
 
 `auto` 会优先用 rembg，没装就退回 threshold。真实照片上 threshold 基本不可用，它假设背景接近纯色。
+
+## 分割模型
+
+想不依赖 rembg 的话，可以拿 FoodSeg103 自己训一个 U-Net。
+
+**先说清楚它学的是什么。** FoodSeg103 标注的是食材，不是盘子——模型学到的是"食物在哪一块"。盘子得靠几何推断：取食物区域的外接椭圆，按 `--seg-expand` 放大到盘沿。圆盘成立，异形盘会偏。真正的盘子分割数据集目前没有公开的。
+
+训：
+
+```bash
+pip install -r requirements-train.txt
+python scripts/download_data.py --dataset foodseg103      # 需要手动从 Google Drive 下
+python scripts/inspect_foodseg.py --data data/FoodSeg103  # 先确认配对和 mask 取值
+python -m src.train_seg --data data/FoodSeg103 --epochs 20 \
+    --batch-size 8 --image-size 384 --base 32 --device auto
+```
+
+用：
+
+```bash
+python compose.py --input photos/*.jpg --segment foodseg \
+    --seg-weights weights/seg_foodseg.pt
+```
+
+**已经验证到什么程度。** 训练、存盘、加载、推理、接入排版这条链，用 `scripts/make_seg_dataset.py` 生成的合成数据跑通过：140 张、CPU 约 6 秒一轮、5 轮后 val IoU 0.9876，`--segment foodseg` 能正常出图。这只证明管线是通的，**不代表真实菜品上的精度**——那个只有拿 FoodSeg103 真训一次才知道。合成数据是卡通色块，和照片差得远。
 
 ## 数据
 
@@ -110,20 +139,26 @@ python scripts/download_data.py --dataset food101 --dest data/
 ## 路线图
 
 - [x] v0 分割、抠图、规则排版、接触阴影、色温匹配
+- [x] v3 训练/推理链路（U-Net + FoodSeg103 加载器），合成数据验证通过
+- [ ] v3 用 FoodSeg103 真训一次，拿到真实照片上的 IoU
 - [ ] v1 每盘独立光向估计，阴影方向跟着原图走
 - [ ] v2 局部 inpainting：只重绘盘沿环带和阴影区，菜像素不动
-- [ ] v3 用 FoodSeg103 微调分割，替代 rembg
 
 ## 结构
 
 ```
-compose.py             CLI 入口
-src/segment.py         分割后端
-src/cutout.py          抠图、羽化、色温匹配
-src/layout.py          排版规则（核心）
-src/render.py          背景、阴影、合成
-scripts/make_samples.py 合成测试图
-scripts/download_data.py 数据集下载
+compose.py               CLI 入口
+src/segment.py           分割后端调度
+src/seg_food.py          模型推理 + 由食物推断盘子
+src/train_seg.py         训练脚本（FoodSeg103）
+src/unet.py              U-Net 定义
+src/cutout.py            抠图、羽化、色温匹配
+src/layout.py            排版规则（核心）
+src/render.py            背景、阴影、合成
+scripts/make_samples.py     合成测试图
+scripts/make_seg_dataset.py 合成分割数据集
+scripts/inspect_foodseg.py  检查 FoodSeg103 格式
+scripts/download_data.py    数据集下载
 ```
 
 ## 许可

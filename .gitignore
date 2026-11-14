@@ -2,6 +2,7 @@
 samples/
 out/
 data/
+weights/
 
 # python
 __pycache__/
