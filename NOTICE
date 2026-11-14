@@ -1,0 +1,36 @@
+# NOTICE
+
+## 代码
+
+MIT 许可，见 LICENSE。
+
+## 图像数据
+
+本仓库**不包含**任何数据集图像。`samples/` 下的图片由
+`scripts/make_samples.py` 程序化生成，不含任何第三方素材。
+
+可选的数据集均为学术研究用途，使用时请遵守各自的许可：
+
+- **Food-101**
+  Bossard et al., *Food-101 – Mining Discriminative Components with Random
+  Forests*, ECCV 2014.
+  <https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101/>
+  仅限研究使用，不得商用或再分发。
+
+- **FoodSeg103**
+  Wu et al., *A Large-Scale Benchmark for Food Image Segmentation*, ACM MM 2021.
+  <https://xkyong.github.io/FoodSeg103/>
+  仅限研究使用，不得商用或再分发。
+
+## 依赖
+
+- Pillow — HPND
+- numpy — BSD-3-Clause
+- rembg（可选）— MIT
+- onnxruntime（可选）— MIT
+
+## 生成内容声明
+
+`compose.py` 输出的是**图像合成**结果：菜品像素来自输入照片，不做生成式重绘。
+如果在此基础上接入 inpainting 等生成模型，输出应按《人工智能生成合成内容标识办法》
+添加相应标识。
